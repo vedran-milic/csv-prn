@@ -25,7 +25,36 @@ function readFile(file, type) {
 function writeFile(reader, type) {
   const content = type === 'text/csv' ? csvContent.value : prnContent.value;
   // @ts-ignore
-  content.innerText = reader.result;
+  content.innerText = parseText(reader.result, type);
+}
+// @ts-ignore
+function parseText(text, type) {
+  const newLines = text.split(/\r?\n|\r|\n/g);
+  const obj = {};
+  const csvRegex = /,(?!\s)/g;
+  const prnRegex = /(?<!,)\s{2,}|(?<=Postcode|Limit)\s|\s(?=\d{8})/g;
+  const regexToUse = type === 'text/csv' ? csvRegex : prnRegex;
+
+  // @ts-ignore
+  newLines.forEach((line, idx) => {
+    const values = line.split(regexToUse);
+
+    if (idx === 0) {
+      // @ts-ignore
+      values.forEach(val => obj[val] = [])
+    } else {
+      const keys = Object.keys(obj);
+      // @ts-ignore
+      values.forEach((val, i) => {
+        // @ts-ignore
+        obj[keys[i]].push(val);
+      });
+    }
+  })
+
+  console.log(JSON.stringify(obj, null, 2));
+
+  return JSON.stringify(obj, null, 2);
 }
 </script>
 
@@ -41,7 +70,7 @@ function writeFile(reader, type) {
           type="file"
           accept=".csv"
           @change="previewFiles">
-        <div ref="csvContent" class="csv-file-content"></div>
+        <pre><code ref="csvContent" class="csv-file-content" /></pre>
       </section>
       <section class="file-compare-file-block select-prn-file">
         <input
@@ -49,7 +78,7 @@ function writeFile(reader, type) {
           type="file"
           accept=".prn"
           @change="previewFiles">
-          <div ref="prnContent" class="prn-file-content"></div>
+          <pre><code ref="prnContent" class="prn-file-content" /></pre>
       </section>
     </section>
     <footer class="file-compare-footer">

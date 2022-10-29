@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import TableView from '@/components/TableView.vue';
+const csvFileInput = ref(null);
+const prnFileInput = ref(null);
 const csvContent = ref('');
 const prnContent = ref('');
 const csvJson = ref('');
@@ -118,6 +120,22 @@ function toggleView(type: string) {
     prnTableView.value = !prnTableView.value;
   }
 }
+
+function clearJson(type: string) {
+  if (type === 'csv') {
+    // @ts-ignore
+    csvContent.value.innerText = '';
+    csvJson.value = '';
+    // @ts-ignore
+    csvFileInput.value.value = null;
+  } else {
+    // @ts-ignore
+    prnContent.value.innerText = '';
+    prnJson.value = '';
+    // @ts-ignore
+    prnFileInput.value.value = null;
+  }
+}
 </script>
 
 <template>
@@ -129,22 +147,26 @@ function toggleView(type: string) {
       <section class="file-compare-file-block select-csv-file">
         <input
           id="csvFile"
+          ref="csvFileInput"
           type="file"
           accept=".csv"
           @change="previewFiles">
+        <button v-if="csvJson" @click="clearJson('csv')">Clear</button>
         <button v-if="csvJson" @click="toggleView('csv')">Toggle view</button>
         <table-view v-if="csvTableView" :json="csvJson" />
         <pre v-else><code ref="csvContent" class="csv-file-content" /></pre>
       </section>
       <section class="file-compare-file-block select-prn-file">
         <input
-          id="csvFile"
+          id="prnFile"
+          ref="prnFileInput"
           type="file"
           accept=".prn"
           @change="previewFiles">
+          <button v-if="prnJson" @click="clearJson('prn')">Clear</button>
+          <button v-if="prnJson" @click="toggleView('prn')">Toggle view</button>
           <table-view v-if="prnTableView" :json="prnJson" />
           <pre v-else><code ref="prnContent" class="prn-file-content" /></pre>
-          <button v-if="prnJson" @click="toggleView('prn')">Toggle view</button>
       </section>
     </section>
     <footer class="file-compare-footer">

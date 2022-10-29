@@ -1,7 +1,12 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
+import TableView from '@/components/TableView.vue';
 const csvContent = ref('');
 const prnContent = ref('');
+const csvJson = ref('');
+const prnJson = ref('');
+const csvTableView = ref(false);
+const prnTableView = ref(false);
 function previewFiles(evt: Event) {
   if (!evt.target) return;
   // @ts-ignore
@@ -24,9 +29,12 @@ function readFile(file, type) {
 // @ts-ignore
 function writeFile(reader, type) {
   const content = type === 'text/csv' ? csvContent.value : prnContent.value;
-  console.log(reader.result);
+  // console.log(reader.result);
+  const text =  parseText(reader.result, type);
   // @ts-ignore
-  content.innerText = parseText(reader.result, type);
+  content.innerText = text;
+  type === 'text/csv' ? csvJson.value = text : prnJson.value = text;
+
 }
 // @ts-ignore
 function parseText(text, type) {
@@ -102,6 +110,14 @@ function formatNumber(val, type) {
   }
   return Number(parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
+
+function toggleView(type: string) {
+  if (type === 'csv') {
+    csvTableView.value = !csvTableView.value;
+  } else {
+    prnTableView.value = !prnTableView.value;
+  }
+}
 </script>
 
 <template>
@@ -116,7 +132,9 @@ function formatNumber(val, type) {
           type="file"
           accept=".csv"
           @change="previewFiles">
-        <pre><code ref="csvContent" class="csv-file-content" /></pre>
+        <button v-if="csvJson" @click="toggleView('csv')">Toggle view</button>
+        <table-view v-if="csvTableView" :json="csvJson" />
+        <pre v-else><code ref="csvContent" class="csv-file-content" /></pre>
       </section>
       <section class="file-compare-file-block select-prn-file">
         <input
@@ -124,7 +142,9 @@ function formatNumber(val, type) {
           type="file"
           accept=".prn"
           @change="previewFiles">
-          <pre><code ref="prnContent" class="prn-file-content" /></pre>
+          <table-view v-if="prnTableView" :json="prnJson" />
+          <pre v-else><code ref="prnContent" class="prn-file-content" /></pre>
+          <button v-if="prnJson" @click="toggleView('prn')">Toggle view</button>
       </section>
     </section>
     <footer class="file-compare-footer">

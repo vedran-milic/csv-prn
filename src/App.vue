@@ -19,7 +19,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
   text-align: center;
 }
 </style>

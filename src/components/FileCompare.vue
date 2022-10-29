@@ -24,15 +24,17 @@ function readFile(file, type) {
 // @ts-ignore
 function writeFile(reader, type) {
   const content = type === 'text/csv' ? csvContent.value : prnContent.value;
+  console.log(reader.result);
   // @ts-ignore
   content.innerText = parseText(reader.result, type);
 }
 // @ts-ignore
 function parseText(text, type) {
-  const newLines = text.split(/\r?\n|\r|\n/g);
+  // @ts-ignore
+  const newLines = text.split(/\r?\n|\r|\n/g).filter(i => i);
   const obj = {};
   const csvRegex = /,(?!\s)/g;
-  const prnRegex = /(?<!,)\s{2,}|(?<=Postcode|Limit)\s|\s(?=\d{8})/g;
+  const prnRegex = /(?<!,)\s{2,}|(?<=Postcode|Limit)\s|\s(?=\d{8}|\d{4}\s)/g;
   const regexToUse = type === 'text/csv' ? csvRegex : prnRegex;
 
   // @ts-ignore
@@ -47,21 +49,65 @@ function parseText(text, type) {
       // @ts-ignore
       values.forEach((val, i) => {
         // @ts-ignore
-        obj[keys[i]].push(val);
+        obj[keys[i]].push(parseValues(val, type, keys[i]));
       });
     }
   })
 
-  console.log(JSON.stringify(obj, null, 2));
-
   return JSON.stringify(obj, null, 2);
+}
+
+// @ts-ignore
+function parseValues(val, type, key) {
+  const parsed = val.replace(/["\\]/g, '');
+
+  if (key === 'Birthday') {
+    return formatMonth(parsed, type)
+  }
+
+  if (key === 'Credit Limit') {
+    return formatNumber(parsed, type);
+  }
+  return parsed;
+}
+
+// @ts-ignore
+function formatMonth(val, type) {
+  let day = '';
+  let month = '';
+  let year = '';
+  if (type === 'text/csv') {
+    const arr = val.split('/');
+    day = arr[0];
+    month = arr[1];
+    year = arr[2];
+  } else {
+    year = val.substring(0, 4);
+    month = val.substring(4, 6);
+    day = val.substring(6, 8)
+  }
+  return new Date(`${year}, ${month}, ${day}`).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+// @ts-ignore
+function formatNumber(val, type) {
+  let parsed = parseFloat(val).toFixed(2);
+  console.log(val, parsed);
+  if (type !== 'text/csv') {
+    // @ts-ignore
+    parsed = parsed / 100;
+  }
+  return Number(parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 </script>
 
 <template>
   <section class="file-compare">
     <header class="file-compare-header">
-      <h1>Select files to comapre</h1>
+      <h1>Select files to compare</h1>
     </header>
     <section class="file-compare-body">
       <section class="file-compare-file-block select-csv-file">

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import TableView from '@/components/TableView.vue';
+import * as diff from 'diff';
 const csvFileInput = ref(null);
 const prnFileInput = ref(null);
 const csvContent = ref('');
@@ -9,6 +10,7 @@ const csvJson = ref('');
 const prnJson = ref('');
 const csvTableView = ref(false);
 const prnTableView = ref(false);
+const jsonDiff = ref([]);
 function previewFiles(evt: Event) {
   if (!evt.target) return;
   // @ts-ignore
@@ -110,7 +112,8 @@ function formatNumber(val, type) {
     // @ts-ignore
     parsed = parsed / 100;
   }
-  return Number(parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return val;
+  // return Number(parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function toggleView(type: string) {
@@ -136,6 +139,18 @@ function clearJson(type: string) {
     prnFileInput.value.value = null;
   }
 }
+
+function compareJson() {
+  if (!csvJson.value || !prnJson.value) {
+    return;
+  }
+  if (csvJson.value === prnJson.value) {
+    alert('The files are identical')
+  }
+  // jsonDiff.value = diff.diffJson(csvJson.value, prnJson.value).filter(item => item.added || item.removed);
+  jsonDiff.value = diff.diffJson(csvJson.value, prnJson.value);
+  // jsonDiff.value = diff.diffJson(JSON.stringify(JSON.parse(csvJson.value)),JSON.stringify( JSON.parse(prnJson.value)));
+}
 </script>
 
 <template>
@@ -144,6 +159,21 @@ function clearJson(type: string) {
       <h1>Select files to compare</h1>
     </header>
     <section class="file-compare-body">
+      <section v-if="jsonDiff.length" class="file-compare-file-block json-diff">
+        <pre>
+          <template v-for="(difference, idx) in jsonDiff" :key="idx">
+            <code v-if="difference.added" class="green">
+              {{ difference.value }}
+            </code>
+            <code v-else-if="difference.removed" class="red">
+              {{ difference.value }}
+            </code>
+            <code v-else>
+              {{ difference.value }}
+            </code>
+          </template>
+        </pre>
+      </section>
       <section class="file-compare-file-block select-csv-file">
         <input
           id="csvFile"
@@ -170,7 +200,20 @@ function clearJson(type: string) {
       </section>
     </section>
     <footer class="file-compare-footer">
-      <button>Compare</button>
+      <button @click="compareJson">Compare</button>
     </footer>
   </section>
 </template>
+
+<style lang="scss">
+.json-diff {
+  color: gray;
+  .red {
+    color: red;
+  }
+
+  .green {
+    color: green;
+  }
+}
+</style>

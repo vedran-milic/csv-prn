@@ -9,11 +9,12 @@ const prnContent = ref(null);
 const diffContent = ref(null);
 const csvJson = ref('');
 const prnJson = ref('');
+const diffDisplayed = ref(false);
 const csvTableView = ref(false);
 const prnTableView = ref(false);
 function previewFiles(evt: Event) {
   // @ts-ignore
-  diffContent.value.innerText = '';
+  clearDiffConent();
   if (!evt.target) return;
   // @ts-ignore
   const [file] = evt.target.files;
@@ -125,9 +126,14 @@ function toggleView(type: string) {
   }
 }
 
-function clearJson(type: string) {
+function clearDiffConent() {
   // @ts-ignore
   diffContent.value.innerText = '';
+  diffDisplayed.value = false;
+}
+
+function clearJson(type: string) {
+  clearDiffConent();
   if (type === 'csv') {
     // @ts-ignore
     csvContent.value.innerText = '';
@@ -147,12 +153,12 @@ function compareJson() {
   if (!csvJson.value || !prnJson.value) {
     return;
   }
-  // @ts-ignore
-  diffContent.value.innerText = '';
+  clearDiffConent();
   if (csvJson.value === prnJson.value) {
     alert('The files are identical')
   }
   const difference = diff.diffJson(csvJson.value, prnJson.value);
+  diffDisplayed.value = true;
   // @ts-ignore
   difference.forEach(el => {
     if (el.added) {
@@ -180,47 +186,66 @@ function compareJson() {
 <template>
   <section class="file-compare">
     <header class="file-compare-header">
-      <h1>Select files to compare</h1>
+      <h1>Compare CSV to PRN</h1>
     </header>
     <section class="file-compare-body">
       <section
         class="file-compare-block select-csv-file"
         :class="{ 'table-view': csvTableView}">
-        <div class="file-compare-inputs">
+        <header v-if="csvJson" class="file-compare-block-header">
+          <h3 class="file-compare-block-title">Json file</h3>
+          <button @click="clearJson('csv')">Clear</button>
+          <button @click="toggleView('csv')">
+            Toggle {{ csvTableView ? 'JSON' : 'table' }}
+          </button>
+        </header>
+        <table-view v-if="csvTableView" :json="csvJson" />
+        <div class="file-compare-block-body">
+          <pre :class="{ hidden: csvTableView }"><code ref="csvContent" class="csv-file-content" /></pre></div>
+        <div class="file-input-container">
           <input
             id="csvFile"
             ref="csvFileInput"
             type="file"
             accept=".csv"
             @change="previewFiles">
-          <button v-if="csvJson" @click="clearJson('csv')">Clear</button>
-          <button v-if="csvJson" @click="toggleView('csv')">Toggle view</button>
+            <label v-if="!csvJson" for="csvFile">Click to select CSV file</label>
         </div>
-        <table-view v-if="csvTableView" :json="csvJson" />
-        <pre :class="{ hidden: csvTableView }"><code ref="csvContent" class="csv-file-content" /></pre>
       </section>
       <section
         class="file-compare-block select-prn-file"
         :class="{ 'table-view': prnTableView}">
-        <div class="file-compare-inputs">
+        <header v-if="prnJson" class="file-compare-block-header">
+          <h3 class="file-compare-block-title">Prn file</h3>
+            <button @click="clearJson('prn')">Clear</button>
+            <button @click="toggleView('prn')">
+              Toggle {{ prnTableView ? 'JSON' : 'table' }}
+            </button>
+        </header>
+        <div class="file-compare-block-body">
+          <table-view v-if="prnTableView" :json="prnJson" />
+          <pre :class="{ hidden: prnTableView }"><code ref="prnContent" class="prn-file-content" /></pre>
+        </div>
+        <div class="file-input-container">
           <input
             id="prnFile"
             ref="prnFileInput"
             type="file"
             accept=".prn"
             @change="previewFiles">
-            <button v-if="prnJson" @click="clearJson('prn')">Clear</button>
-            <button v-if="prnJson" @click="toggleView('prn')">Toggle view</button>
+            <label v-if="!prnJson" for="prnFile">Click to select PRN file</label>
         </div>
-        <table-view v-if="prnTableView" :json="prnJson" />
-        <pre :class="{ hidden: prnTableView }"><code ref="prnContent" class="prn-file-content" /></pre>
       </section>
-      <section class="file-compare-block json-diff">
-        <pre ref="diffContent"></pre>
+      <section class="file-compare-block json-diff" :class="{ hidden: !diffDisplayed }">
+        <header v-if="prnJson" class="file-compare-block-header">
+          <h3 class="file-compare-block-title">Difference</h3>
+            <button @click="clearDiffConent">Clear</button>
+        </header>
+        <div class="file-compare-block-body"><pre ref="diffContent"></pre></div>
       </section>
     </section>
     <footer class="file-compare-footer">
-      <button @click="compareJson">Compare</button>
+      <button class="compare-button" @click="compareJson">Compare</button>
     </footer>
   </section>
 </template>
@@ -234,14 +259,26 @@ function compareJson() {
   border: 1px solid gray;
   height: 500px;
   overflow: auto;
-  width: 100%
+  position: relative;
+  width: 100%;
+
+  + .file-compare-block {
+    border-left: none;
+  }
 }
-.file-compare-inputs {
+.file-compare-block-header {
   background: rgba(#fff, .9);
+  border-bottom: 1px solid #000;
+  display: flex;
+  padding: 5px 10px;
   position: sticky;
   top: 0;
   left: 0;
   right: 0;
+}
+.file-compare-block-body {
+  padding: 0 20px;
+  text-align: left;
 }
 .json-diff {
   color: gray;
@@ -252,5 +289,44 @@ function compareJson() {
   .green {
     color: green;
   }
+}
+.file-input-container {
+  [type=file] {
+    appearance: none;
+    z-index: -1;
+    position: absolute;
+    visibility: hidden;
+  }
+  label {
+    align-items: center;
+    bottom: 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%
+  }
+}
+.file-compare-block-title {
+  margin: 0 auto 0 0;
+  font-size: 16px;
+}
+button {
+  & + button {
+    margin-left: 5px;
+  }
+
+  &.compare-button {
+    font-size: 16p;
+    padding: 10px 5px;
+    margin: 20px 0;
+    width: 300px;
+  }
+}
+pre {
+  max-width: 100%;
+  overflow: hidden;
 }
 </style>

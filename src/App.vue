@@ -19,7 +19,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: auto;
   text-align: center;
 }
 .hidden {

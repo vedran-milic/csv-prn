@@ -41,6 +41,7 @@ function readFile(file: File, type: string) {
 
 function writeFile(reader: FileReader, type: string) {
   const content = type === 'text/csv' ? csvContent.value : prnContent.value;
+  // @ts-ignore
   const text =  parseText(reader.result, type);
   if (content) {
     content.innerText = text;

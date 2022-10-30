@@ -7,7 +7,6 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 const projectRoot = resolve(__dirname);
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     eslintPlugin({

@@ -144,8 +144,8 @@ function compareJson() {
               Toggle {{ prnTableView ? 'JSON' : 'table' }}
             </button>
         </header>
+        <table-view v-if="prnTableView" :json="prnJson" />
         <div class="file-compare-block-body">
-          <table-view v-if="prnTableView" :json="prnJson" />
           <pre :class="{ hidden: prnTableView }"><code ref="prnContent" class="prn-file-content" /></pre>
         </div>
         <div class="file-input-container">

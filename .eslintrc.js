@@ -3,7 +3,6 @@ module.exports = {
   parserOptions: {
     parser: '@typescript-eslint/parser',
     "sourceType": "module"
-    // project: ['./tsconfig.json']
   },
   env: {
     es2021: true,

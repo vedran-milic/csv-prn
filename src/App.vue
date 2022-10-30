@@ -22,4 +22,7 @@ body {
   overflow: auto;
   text-align: center;
 }
+.hidden {
+  display: none;
+}
 </style>

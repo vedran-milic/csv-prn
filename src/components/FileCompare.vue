@@ -4,14 +4,16 @@ import TableView from '@/components/TableView.vue';
 import * as diff from 'diff';
 const csvFileInput = ref(null);
 const prnFileInput = ref(null);
-const csvContent = ref('');
-const prnContent = ref('');
+const csvContent = ref(null);
+const prnContent = ref(null);
+const diffContent = ref(null);
 const csvJson = ref('');
 const prnJson = ref('');
 const csvTableView = ref(false);
 const prnTableView = ref(false);
-const jsonDiff = ref([]);
 function previewFiles(evt: Event) {
+  // @ts-ignore
+  diffContent.value.innerText = '';
   if (!evt.target) return;
   // @ts-ignore
   const [file] = evt.target.files;
@@ -107,13 +109,12 @@ function formatMonth(val, type) {
 // @ts-ignore
 function formatNumber(val, type) {
   let parsed = parseFloat(val).toFixed(2);
-  console.log(val, parsed);
   if (type !== 'text/csv') {
     // @ts-ignore
     parsed = parsed / 100;
   }
-  return val;
-  // return Number(parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  // return val; // uncomment to test diff
+  return Number(parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function toggleView(type: string) {
@@ -125,6 +126,8 @@ function toggleView(type: string) {
 }
 
 function clearJson(type: string) {
+  // @ts-ignore
+  diffContent.value.innerText = '';
   if (type === 'csv') {
     // @ts-ignore
     csvContent.value.innerText = '';
@@ -144,12 +147,33 @@ function compareJson() {
   if (!csvJson.value || !prnJson.value) {
     return;
   }
+  // @ts-ignore
+  diffContent.value.innerText = '';
   if (csvJson.value === prnJson.value) {
     alert('The files are identical')
   }
-  // jsonDiff.value = diff.diffJson(csvJson.value, prnJson.value).filter(item => item.added || item.removed);
-  jsonDiff.value = diff.diffJson(csvJson.value, prnJson.value);
-  // jsonDiff.value = diff.diffJson(JSON.stringify(JSON.parse(csvJson.value)),JSON.stringify( JSON.parse(prnJson.value)));
+  const difference = diff.diffJson(csvJson.value, prnJson.value);
+  // @ts-ignore
+  difference.forEach(el => {
+    if (el.added) {
+      const codeEL = document.createElement('code');
+      codeEL.classList.add('green');
+      codeEL.innerText = el.value;
+      // @ts-ignore
+      diffContent.value.appendChild(codeEL);
+    } else if (el.removed) {
+      const codeEL = document.createElement('code');
+      codeEL.classList.add('red');
+      codeEL.innerText = el.value;
+      // @ts-ignore
+      diffContent.value.appendChild(codeEL);
+    } else {
+      const codeEL = document.createElement('code');
+      codeEL.innerText = el.value;
+      // @ts-ignore
+      diffContent.value.appendChild(codeEL);
+    }
+  })
 }
 </script>
 
@@ -159,44 +183,40 @@ function compareJson() {
       <h1>Select files to compare</h1>
     </header>
     <section class="file-compare-body">
-      <section v-if="jsonDiff.length" class="file-compare-file-block json-diff">
-        <pre>
-          <template v-for="(difference, idx) in jsonDiff" :key="idx">
-            <code v-if="difference.added" class="green">
-              {{ difference.value }}
-            </code>
-            <code v-else-if="difference.removed" class="red">
-              {{ difference.value }}
-            </code>
-            <code v-else>
-              {{ difference.value }}
-            </code>
-          </template>
-        </pre>
-      </section>
-      <section class="file-compare-file-block select-csv-file">
-        <input
-          id="csvFile"
-          ref="csvFileInput"
-          type="file"
-          accept=".csv"
-          @change="previewFiles">
-        <button v-if="csvJson" @click="clearJson('csv')">Clear</button>
-        <button v-if="csvJson" @click="toggleView('csv')">Toggle view</button>
+      <section
+        class="file-compare-block select-csv-file"
+        :class="{ 'table-view': csvTableView}">
+        <div class="file-compare-inputs">
+          <input
+            id="csvFile"
+            ref="csvFileInput"
+            type="file"
+            accept=".csv"
+            @change="previewFiles">
+          <button v-if="csvJson" @click="clearJson('csv')">Clear</button>
+          <button v-if="csvJson" @click="toggleView('csv')">Toggle view</button>
+        </div>
         <table-view v-if="csvTableView" :json="csvJson" />
-        <pre v-else><code ref="csvContent" class="csv-file-content" /></pre>
+        <pre :class="{ hidden: csvTableView }"><code ref="csvContent" class="csv-file-content" /></pre>
       </section>
-      <section class="file-compare-file-block select-prn-file">
-        <input
-          id="prnFile"
-          ref="prnFileInput"
-          type="file"
-          accept=".prn"
-          @change="previewFiles">
-          <button v-if="prnJson" @click="clearJson('prn')">Clear</button>
-          <button v-if="prnJson" @click="toggleView('prn')">Toggle view</button>
-          <table-view v-if="prnTableView" :json="prnJson" />
-          <pre v-else><code ref="prnContent" class="prn-file-content" /></pre>
+      <section
+        class="file-compare-block select-prn-file"
+        :class="{ 'table-view': prnTableView}">
+        <div class="file-compare-inputs">
+          <input
+            id="prnFile"
+            ref="prnFileInput"
+            type="file"
+            accept=".prn"
+            @change="previewFiles">
+            <button v-if="prnJson" @click="clearJson('prn')">Clear</button>
+            <button v-if="prnJson" @click="toggleView('prn')">Toggle view</button>
+        </div>
+        <table-view v-if="prnTableView" :json="prnJson" />
+        <pre :class="{ hidden: prnTableView }"><code ref="prnContent" class="prn-file-content" /></pre>
+      </section>
+      <section class="file-compare-block json-diff">
+        <pre ref="diffContent"></pre>
       </section>
     </section>
     <footer class="file-compare-footer">
@@ -206,6 +226,23 @@ function compareJson() {
 </template>
 
 <style lang="scss">
+.file-compare-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+}
+.file-compare-block {
+  border: 1px solid gray;
+  height: 500px;
+  overflow: auto;
+  width: 100%
+}
+.file-compare-inputs {
+  background: rgba(#fff, .9);
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+}
 .json-diff {
   color: gray;
   .red {

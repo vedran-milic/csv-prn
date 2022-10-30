@@ -1,13 +1,15 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
+import type { Ref } from 'vue';
 import TableView from '@/components/TableView.vue';
 import useParser from '@/services/parser';
 import * as diff from 'diff';
-const csvFileInput = ref(null);
-const prnFileInput = ref(null);
-const csvContent = ref(null);
-const prnContent = ref(null);
-const diffContent = ref(null);
+
+const csvFileInput: Ref<HTMLInputElement | null> = ref(null);
+const prnFileInput: Ref<HTMLInputElement | null> = ref(null);
+const csvContent: Ref<HTMLElement | null> = ref(null);
+const prnContent: Ref<HTMLElement | null> = ref(null);
+const diffContent: Ref<HTMLElement | null> = ref(null);
 const csvJson = ref('');
 const prnJson = ref('');
 const diffDisplayed = ref(false);
@@ -18,18 +20,15 @@ const {
   parseText
 } = useParser();
 
-
 function previewFiles(evt: Event) {
-  // @ts-ignore
   clearDiffConent();
   if (!evt.target) return;
   // @ts-ignore
-  const [file] = evt.target.files;
+  const [file] = (evt.target as HTMLInputElement).files;
   readFile(file, file.type)
 }
 
-// @ts-ignore
-function readFile(file, type) {
+function readFile(file: File, type: string) {
   const reader = new FileReader();
 
   reader.addEventListener("load", writeFile.bind(null, reader, type), false);
@@ -40,15 +39,14 @@ function readFile(file, type) {
   }
 }
 
-// @ts-ignore
-function writeFile(reader, type) {
+function writeFile(reader: FileReader, type: string) {
   const content = type === 'text/csv' ? csvContent.value : prnContent.value;
-  // console.log(reader.result);
   const text =  parseText(reader.result, type);
-  // @ts-ignore
-  content.innerText = text;
-  type === 'text/csv' ? csvJson.value = text : prnJson.value = text;
+  if (content) {
+    content.innerText = text;
+  }
 
+  type === 'text/csv' ? csvJson.value = text : prnJson.value = text;
 }
 
 function toggleView(type: string) {
@@ -60,25 +58,20 @@ function toggleView(type: string) {
 }
 
 function clearDiffConent() {
-  // @ts-ignore
-  diffContent.value.innerText = '';
+  if (diffContent.value) diffContent.value.innerText = '';
   diffDisplayed.value = false;
 }
 
 function clearJson(type: string) {
   clearDiffConent();
   if (type === 'csv') {
-    // @ts-ignore
-    csvContent.value.innerText = '';
+    if (csvContent.value) csvContent.value.innerText = '';
     csvJson.value = '';
-    // @ts-ignore
-    csvFileInput.value.value = null;
+    if (csvFileInput.value) csvFileInput.value.value = '';
   } else {
-    // @ts-ignore
-    prnContent.value.innerText = '';
+    if(prnContent.value) prnContent.value.innerText = '';
     prnJson.value = '';
-    // @ts-ignore
-    prnFileInput.value.value = null;
+    if (prnFileInput.value) prnFileInput.value.value = '';
   }
 }
 
@@ -92,25 +85,21 @@ function compareJson() {
   }
   const difference = diff.diffJson(csvJson.value, prnJson.value);
   diffDisplayed.value = true;
-  // @ts-ignore
   difference.forEach(el => {
     if (el.added) {
       const codeEL = document.createElement('code');
       codeEL.classList.add('green');
       codeEL.innerText = el.value;
-      // @ts-ignore
-      diffContent.value.appendChild(codeEL);
+      if (diffContent.value) diffContent.value.appendChild(codeEL);
     } else if (el.removed) {
       const codeEL = document.createElement('code');
       codeEL.classList.add('red');
       codeEL.innerText = el.value;
-      // @ts-ignore
-      diffContent.value.appendChild(codeEL);
+      if (diffContent.value) diffContent.value.appendChild(codeEL);
     } else {
       const codeEL = document.createElement('code');
       codeEL.innerText = el.value;
-      // @ts-ignore
-      diffContent.value.appendChild(codeEL);
+      if (diffContent.value) diffContent.value.appendChild(codeEL);
     }
   })
 }

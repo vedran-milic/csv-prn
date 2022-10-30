@@ -1,22 +1,17 @@
-// @ts-ignore
-function parseText(text, type) {
-  // @ts-ignore
+function parseText(text: string, type: string) {
   const newLines = text.split(/\r?\n|\r|\n/g).filter(i => i);
-  const obj = {};
+  const obj: Record<string, []> = {};
   const csvRegex = /,(?!\s)/g;
   const prnRegex = /(?<!,)\s{2,}|(?<=Postcode|Limit)\s|\s(?=\d{8}|\d{4}\s)/g;
   const regexToUse = type === 'text/csv' ? csvRegex : prnRegex;
 
-  // @ts-ignore
   newLines.forEach((line, idx) => {
     const values = line.split(regexToUse);
 
     if (idx === 0) {
-      // @ts-ignore
       values.forEach(val => obj[val] = [])
     } else {
       const keys = Object.keys(obj);
-      // @ts-ignore
       values.forEach((val, i) => {
         // @ts-ignore
         obj[keys[i]].push(parseValues(val, type, keys[i]));
@@ -27,8 +22,8 @@ function parseText(text, type) {
   return JSON.stringify(obj, null, 2);
 }
 
-// @ts-ignore
-function parseValues(val, type, key) {
+
+function parseValues(val: string, type: string, key: string) {
   const parsed = val.replace(/["\\]/g, '');
 
   if (key === 'Birthday') {
@@ -41,8 +36,8 @@ function parseValues(val, type, key) {
   return parsed;
 }
 
-// @ts-ignore
-function formatMonth(val, type) {
+
+function formatMonth(val: string, type: string) {
   let day = '';
   let month = '';
   let year = '';
@@ -62,8 +57,8 @@ function formatMonth(val, type) {
     day: 'numeric',
   })
 }
-// @ts-ignore
-function formatNumber(val, type) {
+
+function formatNumber(val: string, type: string) {
   let parsed = parseFloat(val).toFixed(2);
   if (type !== 'text/csv') {
     // @ts-ignore

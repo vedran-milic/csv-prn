@@ -5,6 +5,10 @@ module.exports = {
     "sourceType": "module"
     // project: ['./tsconfig.json']
   },
+  env: {
+    es2021: true,
+    browser: true
+  },
   plugins: [
     '@typescript-eslint'
   ],
